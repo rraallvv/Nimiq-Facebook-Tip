@@ -6,6 +6,7 @@ NEED MORE INFO? CHECK OUT THE BLOGPOST
 https://vandevliet.me/bot-automatically-responds-comments-facebook/
 """
 
+import os
 import sqlite3
 from time import sleep
 import facebook
@@ -13,12 +14,12 @@ from PIL import Image
 from io import BytesIO
 
 
-APP_ID = 'TO FILL IN'
-APP_SECRET = 'TO FILL IN'
-
-PAGE_ID = 'TO FILL IN'
-POST_ID_TO_MONITOR = 'TO FILL IN'
-LONG_LIVED_ACCESS_TOKEN = 'TO FILL IN'
+APP_ID = os.environ['APP_ID']
+APP_SECRET = os.environ['APP_SECRET']
+PAGE_LONG_LIVED_ACCESS_TOKEN = os.environ['PAGE_LONG_LIVED_ACCESS_TOKEN']
+PAGE_ID = os.environ['PAGE_ID']
+POST_ID_TO_MONITOR = os.environ['POST_ID_TO_MONITOR']
+ALBUM_ID_TO_POST_TO = os.environ['ALBUM_ID_TO_POST_TO']
 
 COMBINED_POST_ID_TO_MONITOR = '%s_%s' % (PAGE_ID, POST_ID_TO_MONITOR)
 
@@ -64,10 +65,12 @@ def comment_on_comment(graph, comment):
     graph.put_like(object_id=comment_id)
 
     # profile info:
-    photo = graph.get_connections(id=comment_from_id, connection_name='picture', height=480, width=480)
+    photo = graph.get_connections(
+        id=comment_from_id, connection_name='picture', height=480, width=480)
     # try to get first name, if it's a page there is not first_name
     try:
-        profile = graph.get_object(comment_from_id, fields='first_name,last_name')
+        profile = graph.get_object(
+            comment_from_id, fields='first_name,last_name')
     except:
         pass
 
@@ -77,7 +80,7 @@ def comment_on_comment(graph, comment):
     # first we upload it as an unpublished photo that doesn't appear as a story (in the newsfeed)
     posted_photo = graph.put_photo(
         image=photo_to_post,
-        album_path='404896546596495/photos',
+        album_path=ALBUM_ID_TO_POST_TO + '/photos',
         no_story=True,
         published=False
     )
@@ -85,7 +88,8 @@ def comment_on_comment(graph, comment):
     # if it's a person that commented, we can use the first name
     if profile:
         graph.put_object(parent_object=comment_id, connection_name='comments',
-                         message='Bozour %s. Hier is uwe foto, mijn gedacht!' % (profile['first_name']),
+                         message='Bozour %s. Hier is uwe foto, mijn gedacht!' % (
+                             profile['first_name']),
                          attachment_id=posted_photo['id']
                          )
     else:
@@ -99,10 +103,11 @@ def comment_on_comment(graph, comment):
 
 def monitor_fb_comments():
     # create graph
-    graph = facebook.GraphAPI(LONG_LIVED_ACCESS_TOKEN)
+    graph = facebook.GraphAPI(PAGE_LONG_LIVED_ACCESS_TOKEN)
     # that infinite loop tho
+    print('I spy with my little eye...🕵️ ')
     while True:
-        print('I spy with my little eye...🕵️ ')
+        #print('I spy with my little eye...🕵️ ')
         sleep(5)
 
         # get the comments
@@ -140,6 +145,8 @@ class Posts:
     def __init__(self):
         self.connection = sqlite3.connect('comments.sqlite3')
         self.cursor = self.connection.cursor()
+        self.cursor.execute(
+            "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY NOT NULL)")
 
     def get(self, id):
         self.cursor.execute("SELECT * FROM comments where id='%s'" % id)
