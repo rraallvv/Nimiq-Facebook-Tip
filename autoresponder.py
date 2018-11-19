@@ -7,6 +7,8 @@ https://vandevliet.me/bot-automatically-responds-comments-facebook/
 """
 
 import os
+import sys
+import signal
 import mysql.connector
 from time import sleep
 import facebook
@@ -167,6 +169,15 @@ class Posts:
         except mysql.connector.IntegrityError:
             return False
 
+
+# CTRL-C handler
+def signal_handler(sig, frame):
+    print('Bye!')
+    sys.exit(0)
+
+
+# add handler to exit gracefully
+signal.signal(signal.SIGINT, signal_handler)
 
 # started at the bottom, etc
 if __name__ == '__main__':
