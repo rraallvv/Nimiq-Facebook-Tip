@@ -7,7 +7,7 @@ https://vandevliet.me/bot-automatically-responds-comments-facebook/
 """
 
 import os
-import sqlite3
+import mysql.connector
 from time import sleep
 import facebook
 from PIL import Image
@@ -20,6 +20,8 @@ PAGE_LONG_LIVED_ACCESS_TOKEN = os.environ['PAGE_LONG_LIVED_ACCESS_TOKEN']
 PAGE_ID = os.environ['PAGE_ID']
 POST_ID_TO_MONITOR = os.environ['POST_ID_TO_MONITOR']
 ALBUM_ID_TO_POST_TO = os.environ['ALBUM_ID_TO_POST_TO']
+MYSQL_USER = os.environ['MYSQL_USER']
+MYSQL_PASSWORD = os.environ['MYSQL_PASSWORD']
 
 COMBINED_POST_ID_TO_MONITOR = '%s_%s' % (PAGE_ID, POST_ID_TO_MONITOR)
 
@@ -107,7 +109,7 @@ def monitor_fb_comments():
     # that infinite loop tho
     print('I spy with my little eye...🕵️ ')
     while True:
-        #print('I spy with my little eye...🕵️ ')
+        # print('I spy with my little eye...🕵️ ')
         sleep(5)
 
         # get the comments
@@ -143,10 +145,11 @@ def monitor_fb_comments():
 # Mary had a little class
 class Posts:
     def __init__(self):
-        self.connection = sqlite3.connect('comments.sqlite3')
+        self.connection = mysql.connector.connect(
+            host='localhost', database='facebook_tip_bot', user=MYSQL_USER, password=MYSQL_PASSWORD)
         self.cursor = self.connection.cursor()
         self.cursor.execute(
-            "CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY NOT NULL)")
+            "CREATE TABLE IF NOT EXISTS comments (id TEXT NOT NULL, PRIMARY KEY (id(128)))")
 
     def get(self, id):
         self.cursor.execute("SELECT * FROM comments where id='%s'" % id)
@@ -161,8 +164,9 @@ class Posts:
             lid = self.cursor.lastrowid
             self.connection.commit()
             return lid
-        except sqlite3.IntegrityError:
+        except mysql.connector.IntegrityError:
             return False
+
 
 # started at the bottom, etc
 if __name__ == '__main__':
