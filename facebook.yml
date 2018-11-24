@@ -1,0 +1,17 @@
+log:
+  file: twitter.log
+  level: "info"
+rpc:
+  host: localhost
+  port: 8648
+coin:
+  min_withdraw: 1
+  min_confirmations: 3
+  min_tip: 1
+  short_name: NIM
+  full_name: Nimiq
+  inv_precision: 100000
+  miner_fee: 0.00140
+  address_pattern: "\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}"
+  random_prefix: "\U0001F916 "
+  random_length: 3
