@@ -59,18 +59,30 @@ def make_new_profile_pic(img):
 
 def comment_on_comment(graph, comment):
     comment_id = comment['id']
+
+    print("Let's comment!")
+
+    # if the comment is not on the app page
+    if not 'from' in comment:
+        # like the comment
+        # graph.put_like(object_id=comment_id)
+
+        # ask to post on the app page
+        graph.put_object(parent_object=comment_id,
+                         connection_name='comments', message='Hey!')
+
+        print('Asked to post on the app page')
+
+        return
+
     comment_from_name = comment['from']['name']
     comment_from_id = comment['from']['id']
     comment_message = comment['message']
     profile = None
 
-    print("Let's comment!")
     # like the comment
-    graph.put_like(object_id=comment_id)
+    # graph.put_like(object_id=comment_id)
 
-    # profile info:
-    photo = graph.get_connections(
-        id=comment_from_id, connection_name='picture', height=480, width=480)
     # try to get first name, if it's a page there is not first_name
     try:
         profile = graph.get_object(
@@ -78,31 +90,18 @@ def comment_on_comment(graph, comment):
     except:
         pass
 
-    # let's create our photo that we want to post
-    photo_to_post = make_new_profile_pic(photo['data'])
-
-    # first we upload it as an unpublished photo that doesn't appear as a story (in the newsfeed)
-    posted_photo = graph.put_photo(
-        image=photo_to_post,
-        album_path=ALBUM_ID_TO_POST_TO + '/photos',
-        no_story=True,
-        published=False
-    )
-
     # if it's a person that commented, we can use the first name
     if profile:
         graph.put_object(parent_object=comment_id, connection_name='comments',
-                         message='Bozour %s. Hier is uwe foto, mijn gedacht!' % (
-                             profile['first_name']),
-                         attachment_id=posted_photo['id']
+                         message='Hi %s!' % (
+                             profile['first_name'])
                          )
     else:
         graph.put_object(parent_object=comment_id, connection_name='comments',
-                         message='Hola copain. Hier is uwe foto, mijn gedacht!',
-                         attachment_id=posted_photo['id']
+                         message='Hi friend!'
                          )
 
-    print('Edited and posted the photo of: %s' % comment_from_name)
+    print('Responded to %s' % comment_from_name)
 
 
 def monitor_fb_comments():
@@ -114,34 +113,40 @@ def monitor_fb_comments():
         # print('I spy with my little eye...🕵️ ')
         sleep(5)
 
-        # get the comments
-        comments = graph.get_connections(COMBINED_POST_ID_TO_MONITOR,
-                                         'comments',
-                                         order='chronological')
+        # check mentions
+        check_comments(graph, PAGE_ID, 'tagged')
+
+        # check comments on page post
+        check_comments(graph, COMBINED_POST_ID_TO_MONITOR, 'comments')
+
+
+def check_comments(graph, id, type):
+    # get the comments
+    comments = graph.get_connections(id, type, order='chronological')
+
+    for comment in comments['data']:
+        print(comment['id'])
+
+        # if we can't find it in our comments database, it means
+        # we haven't commented on it yet
+        if not Posts().get(comment['id']):
+            comment_on_comment(graph, comment)
+
+            # add it to the database, so we don't comment on it again
+            Posts().add(comment['id'])
+
+    # while there is a paging key in the comments, let's loop them and do exactly the same,
+    # if you have a better way to do this, PRs are welcome :)
+    while 'paging' in comments:
+        comments = graph.get_connections(
+            id, type, after=comments['paging']['cursors']['after'], order='chronological')
 
         for comment in comments['data']:
+            print(comment['id'])
 
-            # if we can't find it in our comments database, it means
-            # we haven't commented on it yet
             if not Posts().get(comment['id']):
                 comment_on_comment(graph, comment)
-
-                # add it to the database, so we don't comment on it again
                 Posts().add(comment['id'])
-
-        # while there is a paging key in the comments, let's loop them and do exactly the same
-        # if you have a better way to do this, PRs are welcome :)
-        while 'paging' in comments:
-            comments = graph.get_connections(COMBINED_POST_ID_TO_MONITOR,
-                                             'comments',
-                                             after=comments['paging']['cursors']['after'],
-                                             order='chronological')
-
-            for comment in comments['data']:
-
-                if not Posts().get(comment['id']):
-                    comment_on_comment(graph, comment)
-                    Posts().add(comment['id'])
 
 
 # Mary had a little class
