@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-# Need more info? Check out the blogpost:
-# how-to-make-a-bot-that-automatically-replies-to-comments-on-facebook-post
-
-"""
-NEED MORE INFO? CHECK OUT THE BLOGPOST
-https://vandevliet.me/bot-automatically-responds-comments-facebook/
-"""
 
 import os
 import sys
@@ -33,8 +26,6 @@ APP_SECRET = os.environ['APP_SECRET']
 PAGE_LONG_LIVED_ACCESS_TOKEN = os.environ['PAGE_LONG_LIVED_ACCESS_TOKEN']
 PAGE_ID = os.environ['PAGE_ID']
 POST_ID_TO_MONITOR = os.environ['POST_ID_TO_MONITOR']
-ALBUM_ID_TO_POST_TO = os.environ['ALBUM_ID_TO_POST_TO']
-COMBINED_POST_ID_TO_MONITOR = '%s_%s' % (PAGE_ID, POST_ID_TO_MONITOR)
 
 MYSQL_USER = os.environ['MYSQL_USER']
 MYSQL_PASSWORD = os.environ['MYSQL_PASSWORD']
@@ -117,7 +108,7 @@ def email_notification(message):
 def comment_response(graph, comment):
     comment_id = comment['id']
 
-    print("Let's comment!")
+    print("Responding to comment %d" % comment_id)
 
     # if the comment is not on the app page
     if not 'from' in comment:
@@ -162,32 +153,24 @@ def comment_response(graph, comment):
 
 
 def check_comments(graph, id, type):
-    # get the comments
-    comments = graph.get_connections(id, type, order='chronological')
-
-    for comment in comments['data']:
-        print(comment['id'])
-
-        # if we can't find it in our comments database, it means
-        # we haven't commented on it yet
-        if not Posts().get(comment['id']):
-            comment_response(graph, comment)
-
-            # add it to the database, so we don't comment on it again
-            Posts().add(comment['id'])
-
-    # while there is a paging key in the comments, let's loop them and do exactly the same,
-    # if you have a better way to do this, PRs are welcome :)
-    while 'paging' in comments:
+    # while there is a paging key in the comments, let's loop them
+    comments = {}
+    while True:
+        # get the comments
         comments = graph.get_connections(
-            id, type, after=comments['paging']['cursors']['after'], order='chronological')
+            id, type, after=comments['paging']['cursors']['after'] if 'paging' in comments else None, order='chronological')
 
         for comment in comments['data']:
-            print(comment['id'])
-
+            # if we can't find it in our comments database, it means
+            # we haven't commented on it yet
             if not Posts().get(comment['id']):
                 comment_response(graph, comment)
+
+                # add it to the database, so we don't comment on it again
                 Posts().add(comment['id'])
+
+        if not 'paging' in comments:
+            break
 
 
 def json_rpc_fetch(method, *params):
@@ -314,14 +297,14 @@ def signal_handler(sig, frame):
 
 
 # check if the config file exists
-if not os.path.isfile("./facebook.yml"):
+if not os.path.isfile("./settings.yml"):
     print(
         "Configuration file doesn't exist! Please read the README.md file first."
     )
     sys.exit(1)
 
 # load settings
-with open('./facebook.yml', 'r') as infile:
+with open('./settings.yml', 'r') as infile:
     settings = yaml.safe_load(infile)
 
 MINER_FEE = settings["coin"]["miner_fee"] * settings["coin"]["inv_precision"]
@@ -373,4 +356,4 @@ while True:
     check_comments(graph, PAGE_ID, 'tagged')
 
     # check comments on page post
-    check_comments(graph, COMBINED_POST_ID_TO_MONITOR, 'comments')
+    check_comments(graph, '%s_%s' % (PAGE_ID, POST_ID_TO_MONITOR), 'comments')
