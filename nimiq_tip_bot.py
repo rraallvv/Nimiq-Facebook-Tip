@@ -20,6 +20,7 @@ import ssl
 import yaml
 import re
 import traceback
+from random import randint
 
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
@@ -105,6 +106,18 @@ def email_notification(message):
     send_mail("Facebook Tip Bot", message)
 
 
+def post_comment(id, message):
+    # get the random tag
+    d = settings["coin"]["random_length"]
+    n = 10 ** d - 1
+    r = ("0.%0" + str(d) + "d") % randint(0, n)
+    tag = "[" + settings["coin"]["random_prefix"] + r + "]"
+
+    # post message with random tag at the end
+    graph.put_object(parent_object=id, connection_name='comments',
+                     message=message + " " + tag)
+
+
 def comment_response(graph, comment):
     id = comment['id']
 
@@ -115,8 +128,7 @@ def comment_response(graph, comment):
         # graph.put_like(object_id=id)
 
         # ask to post on the app page
-        graph.put_object(parent_object=id,
-                         connection_name='comments', message='Hey!')
+        post_comment(id, 'comments', message='Hey!')
 
         print('Asked to post on the app page')
 
@@ -138,11 +150,21 @@ def comment_response(graph, comment):
     except:
         pass
 
+    print("Response to comment %s" % id)
+
+    if not from_id:
+        post_comment(id, 'Hi friend! You might want to re-post here ' +
+                         "https://www.facebook.com/permalink.php?story_fbid=" + POST_ID_TO_MONITOR + "&id=" + PAGE_ID)
+        print("Asked to re-post on page")
+        return
+
+    print("User has id %s" % from_id)
+
     match = re.search("(!.*)", full_message)
 
     if not match:
         # forward to notification email
-        print("Forwarded message " + id)
+        print("Message forwarded to email notification")
         email_notification("message " + id + ":\n" + full_message)
         return
 
@@ -151,13 +173,13 @@ def comment_response(graph, comment):
     match = re.search("^!(\\S+)", message)
     if not match:
         # forward to notification email
-        print("Forwarded message " + id)
+        print("Message forwarded to email notification")
         email_notification("message " + id + ":\n" + full_message)
         return
 
     command = match.group(1)
 
-    print("New comment with id: " + id)
+    print("Processing command " + command)
 
     # commands
     if command == "balance":
@@ -176,26 +198,13 @@ def comment_response(graph, comment):
         print(command)
 
     elif command == "help":
-        print(command)
-
-    elif command == "help":
-        print(command)
+        post_comment(
+            id, "Here is a list of commands: !balance !send !tip !withdraw !address")
 
     else:
-        print(command)
-
-    # if it's a person that commented, we can use the first name
-    if from_name:
-        graph.put_object(parent_object=id, connection_name='comments',
-                         message='Hi %s!' % (
-                             from_name)
-                         )
-    else:
-        graph.put_object(parent_object=id, connection_name='comments',
-                         message='Hi friend!'
-                         )
-
-    print("Responded to comment %s" % id)
+        # if command doesnt match return
+        post_comment(id, "I'm sorry, I don't recognize that command")
+        print("Command not recognized")
 
 
 def check_comments(graph, id, type):
