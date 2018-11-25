@@ -106,50 +106,96 @@ def email_notification(message):
 
 
 def comment_response(graph, comment):
-    comment_id = comment['id']
+    id = comment['id']
 
-    print("Responding to comment %d" % comment_id)
-
+    '''
     # if the comment is not on the app page
     if not 'from' in comment:
         # like the comment
-        # graph.put_like(object_id=comment_id)
+        # graph.put_like(object_id=id)
 
         # ask to post on the app page
-        graph.put_object(parent_object=comment_id,
+        graph.put_object(parent_object=id,
                          connection_name='comments', message='Hey!')
 
         print('Asked to post on the app page')
 
         return
+    '''
 
-    comment_from_name = comment['from']['name']
-    comment_from_id = comment['from']['id']
-    comment_message = comment['message']
-    profile = None
+    full_message = comment['message']
+    from_id = None
+    from_name = None
 
     # like the comment
-    # graph.put_like(object_id=comment_id)
+    # graph.put_like(object_id=id)
 
     # try to get first name, if it's a page there is not first_name
     try:
-        profile = graph.get_object(
-            comment_from_id, fields='first_name,last_name')
+        from_id = comment['from']['id']
+        from_name = graph.get_object(from_id, fields='first_name')[
+            'first_name']
     except:
         pass
 
+    match = re.search("(!.*)", full_message)
+
+    if not match:
+        # forward to notification email
+        print("Forwarded message " + id)
+        email_notification("message " + id + ":\n" + full_message)
+        return
+
+    message = match.group()
+
+    match = re.search("^!(\\S+)", message)
+    if not match:
+        # forward to notification email
+        print("Forwarded message " + id)
+        email_notification("message " + id + ":\n" + full_message)
+        return
+
+    command = match.group(1)
+
+    print("New comment with id: " + id)
+
+    # commands
+    if command == "balance":
+        print(command)
+
+    elif command == "address":
+        print(command)
+
+    elif command == "tip":
+        print(command)
+
+    elif command == "withdraw":
+        print(command)
+
+    elif command == "send":
+        print(command)
+
+    elif command == "help":
+        print(command)
+
+    elif command == "help":
+        print(command)
+
+    else:
+        print(command)
+
     # if it's a person that commented, we can use the first name
-    if profile:
-        graph.put_object(parent_object=comment_id, connection_name='comments',
+    if from_name:
+        graph.put_object(parent_object=id, connection_name='comments',
                          message='Hi %s!' % (
-                             profile['first_name'])
+                             from_name)
                          )
     else:
-        graph.put_object(parent_object=comment_id, connection_name='comments',
+        graph.put_object(parent_object=id, connection_name='comments',
                          message='Hi friend!'
                          )
 
-    print('Responded to %s' % comment_from_name)
+    print("Responded to comment %s" % id)
 
 
 def check_comments(graph, id, type):
