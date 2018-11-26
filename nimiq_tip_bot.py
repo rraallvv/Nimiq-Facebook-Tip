@@ -183,7 +183,25 @@ def comment_response(graph, comment):
 
     # commands
     if command == "balance":
-        print(command)
+        print("Requesting balance")
+        try:
+            address = get_address(from_id)
+            balance = get_balance(
+                address,
+                settings["coin"]["min_confirmations"]
+            )
+            unconfirmed_balance = get_balance(address)
+            unconfirmed_balance -= balance
+
+            print("Balance is " + amount_to_string(balance) + (" ( Unconfirmed: " +
+                                                               amount_to_string(unconfirmed_balance) + " )" if unconfirmed_balance > 0 else ""))
+            post_comment(id, "Your current balance is " + amount_to_string(balance) + " $" + settings["coin"]["short_name"] + "." + (
+                " ( Unconfirmed: " + amount_to_string(unconfirmed_balance) + " $" + settings["coin"]["short_name"] + " )" if unconfirmed_balance > 0 else ""))
+
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id, "Could not get your balance.")
+            print("Error in !balance command" + str(err))
 
     elif command == "address":
         print(command)
@@ -281,8 +299,8 @@ def get_balance(address, confirmations="latest"):
         confirmations = blockNumber - confirmations
         for i in range(blockNumber, confirmations, -1):
             block = json_rpc_fetch("getBlockByNumber", i, True)
-            for j in range(0, block.transactions.length):
-                transaction = block["transactions"][j]
+            for j in range(0, len(block["transactions"])):
+                transaction=block["transactions"][j]
                 # if transaction["fromAddress"] == address:
                 #    balance -= transaction["value"] + transaction["fee"]
                 if transaction["toAddress"] == address:
@@ -296,23 +314,23 @@ def dump_error(err):
 
 class Posts:
     def __init__(self):
-        self.connection = mysql.connector.connect(
+        self.connection=mysql.connector.connect(
             host='localhost', database='facebook_tip_bot', user=MYSQL_USER, password=MYSQL_PASSWORD)
-        self.cursor = self.connection.cursor()
+        self.cursor=self.connection.cursor()
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS comments (id TEXT NOT NULL, PRIMARY KEY (id(128)))")
 
     def get(self, id):
         self.cursor.execute("SELECT * FROM comments where id='%s'" % id)
 
-        row = self.cursor.fetchone()
+        row=self.cursor.fetchone()
 
         return row
 
     def add(self, id):
         try:
             self.cursor.execute("INSERT INTO comments VALUES('%s')" % id)
-            lid = self.cursor.lastrowid
+            lid=self.cursor.lastrowid
             self.connection.commit()
             return lid
         except mysql.connector.IntegrityError:
@@ -321,16 +339,16 @@ class Posts:
 
 class Addresses:
     def __init__(self):
-        self.connection = mysql.connector.connect(
+        self.connection=mysql.connector.connect(
             host='localhost', database='facebook_tip_bot', user=MYSQL_USER, password=MYSQL_PASSWORD)
-        self.cursor = self.connection.cursor()
+        self.cursor=self.connection.cursor()
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS addresses (id TEXT NOT NULL, address VARCHAR(44) NOT NULL, PRIMARY KEY (id(128)))")
 
     def get(self, id):
         self.cursor.execute("SELECT address FROM addresses where id='%s'" % id)
 
-        row = self.cursor.fetchone()
+        row=self.cursor.fetchone()
 
         return row
 
@@ -338,7 +356,7 @@ class Addresses:
         try:
             self.cursor.execute(
                 "INSERT INTO addresses VALUES('%s', '%s')" % (id, address))
-            lid = self.cursor.lastrowid
+            lid=self.cursor.lastrowid
             self.connection.commit()
             return lid
         except mysql.connector.IntegrityError:
@@ -360,18 +378,18 @@ if not os.path.isfile("./settings.yml"):
 
 # load settings
 with open('./settings.yml', 'r') as infile:
-    settings = yaml.safe_load(infile)
+    settings=yaml.safe_load(infile)
 
-MINER_FEE = settings["coin"]["miner_fee"] * settings["coin"]["inv_precision"]
-MIN_WITHDRAW = settings["coin"]["min_withdraw"] * \
+MINER_FEE=settings["coin"]["miner_fee"] * settings["coin"]["inv_precision"]
+MIN_WITHDRAW=settings["coin"]["min_withdraw"] * \
     settings["coin"]["inv_precision"]
-MIN_TIP = settings["coin"]["min_tip"] * settings["coin"]["inv_precision"]
+MIN_TIP=settings["coin"]["min_tip"] * settings["coin"]["inv_precision"]
 
 # connect to coin daemon
 print("Connecting to " + settings["coin"]["full_name"] + " RPC API...")
 
 try:
-    blockNumber = json_rpc_fetch("blockNumber")
+    blockNumber=json_rpc_fetch("blockNumber")
     # TODO: check if the node is fully synced
     if not blockNumber:
         sys.exit(1)
@@ -381,7 +399,7 @@ except Exception as err:
     sys.exit(1)
 
 try:
-    balance = get_balance(
+    balance=get_balance(
         "NQ50 V2LA 91XE SJTE DHT5 122G KFTV C6T6 8QAQ"
     )
     print(
@@ -394,13 +412,13 @@ except Exception as err:
     sys.exit(1)
 
 # enable SSL for email notifications
-ssl._create_default_https_context = ssl._create_unverified_context
+ssl._create_default_https_context=ssl._create_unverified_context
 
 # add handler to exit gracefully
 signal.signal(signal.SIGINT, signal_handler)
 
 # create api graph
-graph = facebook.GraphAPI(PAGE_LONG_LIVED_ACCESS_TOKEN)
+graph=facebook.GraphAPI(PAGE_LONG_LIVED_ACCESS_TOKEN)
 
 # facebook doesn't notify when comments are recived so we have to pull that data constantly
 print('Started monitoring facebook comments...')
