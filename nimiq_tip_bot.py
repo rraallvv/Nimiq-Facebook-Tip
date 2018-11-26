@@ -149,14 +149,18 @@ def comment_response(graph, comment):
     except:
         pass
 
-    print("Response to comment %s" % id)
-
     if not from_id:
+        print("Response to comment %s" % id)
         post_comment(id, 'Hi friend! You might want to re-post here ' +
                          "https://www.facebook.com/permalink.php?story_fbid=" + POST_ID_TO_MONITOR + "&id=" + PAGE_ID)
         print("Asked to re-post on page")
         return
 
+    # if comment is from the page ignore it
+    if from_id == PAGE_ID:
+        return
+
+    print("Response to comment %s" % id)
     print("User has id %s" % from_id)
 
     match = re.search("(!.*)", full_message)
