@@ -6,8 +6,6 @@ import signal
 import mysql.connector
 from time import sleep
 import facebook
-from PIL import Image
-from io import BytesIO
 import json
 import base64
 import requests
@@ -230,7 +228,7 @@ def comment_response(graph, comment):
 
         try:
             amount = int(round(float(match.group(2)) *
-                         settings["coin"]["inv_precision"]))
+                               settings["coin"]["inv_precision"]))
         except Exception as err:
             post_comment(id, "I'm sorry, The amount is invalid")
             print(from_id + " tried to send an invalid amount")
@@ -338,10 +336,10 @@ def comment_response(graph, comment):
             "^.?withdraw (" + settings["coin"]["address_pattern"] + ")", message)
         if not match:
             post_comment(id,
-                "Usage: <!withdraw [" +
-                settings["coin"]["full_name"] +
-                " address]>"
-            )
+                         "Usage: <!withdraw [" +
+                         settings["coin"]["full_name"] +
+                         " address]>"
+                         )
             return
 
         to_address = match.group(1)
@@ -351,7 +349,7 @@ def comment_response(graph, comment):
         try:
             if not json_rpc_fetch("getAccount", to_address):
                 post_comment(id,
-                    "I'm sorry, " + to_address + " is invalid.")
+                             "I'm sorry, " + to_address + " is invalid.")
                 print(
                     "%s tried to withdraw to an invalid address" %
                     from_id
@@ -361,11 +359,11 @@ def comment_response(graph, comment):
         except Exception as err:
             email_notification(dump_error(err))
             post_comment(id,
-                "I'm sorry, something went wrong with the address validation for " +
-                to_address)
+                         "I'm sorry, something went wrong with the address validation for " +
+                         to_address)
             print(
                 from_id + " tried to withdraw but something went wrong " +
-                    str(err)
+                str(err)
             )
             return
 
@@ -378,21 +376,21 @@ def comment_response(graph, comment):
         except Exception as err:
             email_notification(dump_error(err))
             post_comment(id,
-                "I'm sorry I could not get your balance"
-            )
+                         "I'm sorry I could not get your balance"
+                         )
             return
 
         if balance < MIN_WITHDRAW + MINER_FEE:
             short = MIN_WITHDRAW + MINER_FEE - balance
             post_comment(id,
-                "I'm sorry, the minimum withdrawal amount is " +
-                amount_to_string(MIN_WITHDRAW) +
-                " $" +
-                settings["coin"]["short_name"] +
-                " you are short " +
-                amount_to_string(short) +
-                " $" +
-                settings["coin"]["short_name"])
+                         "I'm sorry, the minimum withdrawal amount is " +
+                         amount_to_string(MIN_WITHDRAW) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         " you are short " +
+                         amount_to_string(short) +
+                         " $" +
+                         settings["coin"]["short_name"])
             print(
                 from_id +
                 " tried to withdraw " +
@@ -405,11 +403,11 @@ def comment_response(graph, comment):
         if balance < MIN_WITHDRAW + MINER_FEE:
             short = MIN_WITHDRAW + MINER_FEE - balance
             post_comment(id,
-                "I'm sorry, you dont have enough funds to cover the miner fee (you are short " +
-                amount_to_string(short) +
-                " $" +
-                settings["coin"]["short_name"] +
-                ")")
+                         "I'm sorry, you dont have enough funds to cover the miner fee (you are short " +
+                         amount_to_string(short) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         ")")
             print(
                 from_id +
                 " tried to withdraw " +
@@ -428,11 +426,11 @@ def comment_response(graph, comment):
                 'fee': MINER_FEE
             })
             post_comment(id,
-                amount_to_string(amount) +
-                " $" +
-                settings["coin"]["short_name"] +
-                " has been withdrawn from your account to " +
-                to_address)
+                         amount_to_string(amount) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         " has been withdrawn from your account to " +
+                         to_address)
             print(
                 "Sending " +
                 amount_to_string(amount) +
@@ -447,7 +445,7 @@ def comment_response(graph, comment):
         except Exception as err:
             email_notification(dump_error(err))
             post_comment(id,
-                "Could not send coins to " + to_address)
+                         "Could not send coins to " + to_address)
             print("Error in !withdraw command" + str(err))
 
     elif command == "send":
@@ -465,7 +463,7 @@ def comment_response(graph, comment):
 
         try:
             amount = int(round(float(match.group(2)) *
-                         settings["coin"]["inv_precision"]))
+                               settings["coin"]["inv_precision"]))
         except Exception as err:
             post_comment(id, "I'm sorry, The amount is invalid")
             print(from_id + " tried to send an invalid amount")
@@ -474,7 +472,7 @@ def comment_response(graph, comment):
         try:
             if not json_rpc_fetch("getAccount", to_address):
                 post_comment(id,
-                    "I'm sorry, " + to_address + " is invalid.")
+                             "I'm sorry, " + to_address + " is invalid.")
                 print(
                     "%s tried to withdraw to an invalid address" %
                     from_id
@@ -484,8 +482,8 @@ def comment_response(graph, comment):
         except Exception as err:
             email_notification(dump_error(err))
             post_comment(id,
-                "I'm sorry, something went wrong with the address validation for " +
-                to_address)
+                         "I'm sorry, something went wrong with the address validation for " +
+                         to_address)
             print(
                 from_id + " tried to withdraw but something went wrong " + str(err))
             return
@@ -497,8 +495,8 @@ def comment_response(graph, comment):
         except Exception as err:
             email_notification(dump_error(err))
             post_comment(id,
-                "I'm sorry I could not get your balance"
-            )
+                         "I'm sorry I could not get your balance"
+                         )
             return
 
         if balance >= amount + MINER_FEE:
@@ -511,11 +509,11 @@ def comment_response(graph, comment):
                         'fee': MINER_FEE
                     })
                     post_comment(id,
-                        amount_to_string(amount) +
-                        " $" +
-                        settings["coin"]["short_name"] +
-                        " has been sent from your account to " +
-                        to_address)
+                                 amount_to_string(amount) +
+                                 " $" +
+                                 settings["coin"]["short_name"] +
+                                 " has been sent from your account to " +
+                                 to_address)
                     print(
                         "Sending " +
                         amount_to_string(amount) +
@@ -530,20 +528,20 @@ def comment_response(graph, comment):
                 except Exception as err:
                     email_notification(dump_error(err))
                     post_comment(id,
-                        "Could not send coins to " + to_address)
+                                 "Could not send coins to " + to_address)
                     print("Error in !send command", err)
 
             else:
                 short = MIN_WITHDRAW + MINER_FEE - amount
                 post_comment(id,
-                    "I'm sorry, the minimum amount is " +
-                    amount_to_string(MIN_WITHDRAW) +
-                    " $" +
-                    settings["coin"]["short_name"] +
-                    " you are short " +
-                    amount_to_string(short) +
-                    " $" +
-                    settings["coin"]["short_name"])
+                             "I'm sorry, the minimum amount is " +
+                             amount_to_string(MIN_WITHDRAW) +
+                             " $" +
+                             settings["coin"]["short_name"] +
+                             " you are short " +
+                             amount_to_string(short) +
+                             " $" +
+                             settings["coin"]["short_name"])
                 print(
                     from_id +
                     " tried to send " +
@@ -555,11 +553,11 @@ def comment_response(graph, comment):
         else:
             short = amount + MINER_FEE - balance
             post_comment(id,
-                "I'm sorry, you dont have enough funds (you are short " +
-                amount_to_string(short) +
-                " $" +
-                settings["coin"]["short_name"] +
-                ")")
+                         "I'm sorry, you dont have enough funds (you are short " +
+                         amount_to_string(short) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         ")")
             print(
                 from_id +
                 " tried to send " +
@@ -581,24 +579,33 @@ def comment_response(graph, comment):
 
 
 def check_comments(graph, id, type):
-    # while there is a paging key in the comments, let's loop them
-    comments = {}
+    # queue comments for processing
+    queue = []
+    result = {}
     while True:
-        # get the comments
-        comments = graph.get_connections(
-            id, type, after=comments['paging']['cursors']['after'] if 'paging' in comments else None, order='chronological')
+        # get one comment at a time in reverse chronological order (newest first)
+        result = graph.get_connections(
+            id, type, after=result['paging']['cursors']['after'] if 'paging' in result else None, order='reverse_chronological', limit=1)
+        data = result["data"]
+        comment = data[0]
 
-        for comment in comments['data']:
-            # if we can't find it in our comments database, it means
-            # we haven't commented on it yet
-            if not Posts().get(comment['id']):
-                comment_response(graph, comment)
-
-                # add it to the database, so we don't comment on it again
-                Posts().add(comment['id'])
-
-        if not 'paging' in comments:
+        # queue comment if not in database
+        # exit if already stored
+        if Posts().get(comment['id']):
             break
+        else:
+            queue.append(comment)
+
+        # exit if there are no more pages to process
+        if not 'paging' in result:
+            break
+
+    # process commands in queue in chronological order (oldest first)
+    for comment in reversed(queue):
+        comment_response(graph, comment)
+
+        # add it to the database, so we don't comment on it again
+        Posts().add(comment['id'])
 
 
 def json_rpc_fetch(method, *params):
@@ -733,20 +740,20 @@ if not os.path.isfile("./settings.yml"):
 
 # load settings
 with open('./settings.yml', 'r') as infile:
-    settings= yaml.safe_load(infile)
+    settings = yaml.safe_load(infile)
 
 MINER_FEE = int(round(settings["coin"]["miner_fee"]
                       * settings["coin"]["inv_precision"]))
 MIN_WITHDRAW = int(round(settings["coin"]["min_withdraw"] *
                          settings["coin"]["inv_precision"]))
-MIN_TIP= int(round(settings["coin"]["min_tip"]
+MIN_TIP = int(round(settings["coin"]["min_tip"]
                     * settings["coin"]["inv_precision"]))
 
 # connect to coin daemon
 print("Connecting to " + settings["coin"]["full_name"] + " RPC API...")
 
 try:
-    blockNumber= json_rpc_fetch("blockNumber")
+    blockNumber = json_rpc_fetch("blockNumber")
     # TODO: check if the node is fully synced
     if not blockNumber:
         sys.exit(1)
@@ -756,7 +763,7 @@ except Exception as err:
     sys.exit(1)
 
 try:
-    balance= get_balance(
+    balance = get_balance(
         "NQ50 V2LA 91XE SJTE DHT5 122G KFTV C6T6 8QAQ"
     )
     print(
