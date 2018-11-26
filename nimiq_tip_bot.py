@@ -142,11 +142,10 @@ def comment_response(graph, comment):
     # like the comment
     # graph.put_like(object_id=id)
 
-    # try to get first name, if it's a page there is not first_name
+    # try to get the name
     try:
         from_id = comment['from']['id']
-        from_name = graph.get_object(from_id, fields='first_name')[
-            'first_name']
+        from_name = graph.get_object(from_id, fields='name')['name']
     except:
         pass
 
@@ -218,7 +217,129 @@ def comment_response(graph, comment):
             print("Something went wrong while getting the address " + str(err))
 
     elif command == "tip":
-        print(command)
+        to_id = None
+        to_name = None
+        match = None
+
+        message_tags = graph.get_object(id, fields='message_tags')[
+            'message_tags']
+        for message_tag in message_tags:
+            test_name = re.escape(message_tag["name"])
+            match = re.search(
+                "^.?tip (" + test_name + ") ([\\d\\.]+)", message)
+            if match:
+                to_id = message_tag["id"]
+                to_name = message_tag["name"]
+                break
+
+        print("Processing tip for %s" % from_id)
+
+        if not match or len(match.groups()) < 2:
+            post_comment(id, "Usage: <!tip [user] [amount]>")
+            return
+
+        try:
+            amount = float(match.group(2)) * settings["coin"]["inv_precision"]
+        except Exception as err:
+            post_comment(id, "I'm sorry, The amount is invalid")
+            print(from_id + " tried to send an invalid amount")
+            return
+
+        print(
+            "from: " + from_name + " to: " + to_name +
+            " amount: " + amount_to_string(amount)
+        )
+
+        # check the user isn't tipping themselves.
+        if to_id == from_id:
+            post_comment(id, "I'm sorry, You can't tip yourself !")
+            print(from_id + " tried to send to themselves.")
+            return
+
+        # check amount is larger than minimum tip amount
+        # charge twice the miner fee and send a half with the tip for withdrawal
+        if amount < MIN_TIP:
+            post_comment(id,
+                         "I'm sorry, your tip to " +
+                         to_name +
+                         " (" +
+                         amount_to_string(amount) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         ") is smaller that the minimum amount allowed (" +
+                         amount_to_string(MIN_TIP) +
+                         " $" +
+                         settings["coin"]["short_name"] +
+                         ")")
+            print(from_id + " tried to send too small of a tip.")
+            return
+
+        # check balance with min. confirmations
+        from_address = None
+        to_address = None
+        balance = None
+        try:
+            from_address = get_address(from_id)
+            balance = get_balance(
+                from_address,
+                settings["coin"]["min_confirmations"]
+            )
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id,
+                         "Could not get your balance.")
+            print("Error while checking balance for " + from_id + str(err))
+            return
+
+        try:
+            # charge twice the miner fee and send a half with the tip for withdrawal
+            if balance >= amount + 2 * MINER_FEE:
+                to_address = get_address(to_id)
+                json_rpc_fetch("sendTransaction", {
+                    'from': from_address,
+                    'to': to_address,
+                    'value': amount + MINER_FEE,  # send the withdrawal fee with the tip
+                    'fee': MINER_FEE
+                })
+                post_comment(id,
+                             from_name +
+                             " tipped " +
+                             to_name +
+                             " " +
+                             amount_to_string(amount) +
+                             " $" +
+                             settings["coin"]["short_name"] +
+                             " Reply !help to this page post to claim your tip !")
+                print(from_id +
+                      " tipped " +
+                      to_id +
+                      " " +
+                      amount_to_string(amount) +
+                      " " +
+                      settings["coin"]["short_name"]
+                      )
+            else:
+                short = amount + 2 * MINER_FEE - balance
+                post_comment(id,
+                             "I'm sorry, you dont have enough funds (you are short " +
+                             amount_to_string(short) +
+                             " $" +
+                             settings["coin"]["short_name"] +
+                             ")")
+                print(from_id +
+                      " tried to tip " +
+                      to_id +
+                      " " +
+                      amount_to_string(amount) +
+                      ", but has only " +
+                      balance
+                      )
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id,
+                         "Could not send coins to " + to_name)
+            print("Error while sending coins from " +
+                  from_name + " to " + to_name + str(err))
 
     elif command == "withdraw":
         print(command)
@@ -286,7 +407,7 @@ def json_rpc_fetch(method, *params):
 
 
 def amount_to_string(amount):
-    amount = amount / settings["coin"]["inv_precision"]
+    amount = amount / float(settings["coin"]["inv_precision"])
     if amount % 1 != 0:
         return "{0:.5f}".format(amount)
     return str(amount)
@@ -316,7 +437,7 @@ def get_balance(address, confirmations="latest"):
                 #    balance -= transaction["value"] + transaction["fee"]
                 if transaction["toAddress"] == address:
                     balance -= transaction["value"]
-    return balance
+    return int(round(balance))
 
 
 def dump_error(err):
@@ -391,10 +512,12 @@ if not os.path.isfile("./settings.yml"):
 with open('./settings.yml', 'r') as infile:
     settings = yaml.safe_load(infile)
 
-MINER_FEE = settings["coin"]["miner_fee"] * settings["coin"]["inv_precision"]
-MIN_WITHDRAW = settings["coin"]["min_withdraw"] * \
-    settings["coin"]["inv_precision"]
-MIN_TIP = settings["coin"]["min_tip"] * settings["coin"]["inv_precision"]
+MINER_FEE = int(round(settings["coin"]["miner_fee"]
+                      * settings["coin"]["inv_precision"]))
+MIN_WITHDRAW = int(round(settings["coin"]["min_withdraw"] *
+                         settings["coin"]["inv_precision"]))
+MIN_TIP = int(round(settings["coin"]["min_tip"]
+                    * settings["coin"]["inv_precision"]))
 
 # connect to coin daemon
 print("Connecting to " + settings["coin"]["full_name"] + " RPC API...")
@@ -406,7 +529,7 @@ try:
         sys.exit(1)
 except Exception as err:
     email_notification(dump_error(err))
-    print("Couldn't get blockNumber " + err)
+    print("Couldn't get blockNumber " + str(err))
     sys.exit(1)
 
 try:
