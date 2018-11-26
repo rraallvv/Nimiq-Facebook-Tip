@@ -342,7 +342,120 @@ def comment_response(graph, comment):
                   from_name + " to " + to_name + str(err))
 
     elif command == "withdraw":
-        print(command)
+        print("Processing withdrawal")
+        match = re.search("^.?withdraw (" + settings["coin"]["address_pattern"] + ")", message)
+        if not match:
+            post_comment(id,
+                "Usage: <!withdraw [" +
+                settings["coin"]["full_name"] +
+                " address]>"
+            )
+            return
+
+        to_address = match.group(1)
+        from_address = None
+        balance = None
+
+        try:
+            if not json_rpc_fetch("getAccount", to_address):
+                post_comment(id,
+                    "I'm sorry, " + to_address + " is invalid.")
+                print(
+                    "%s tried to withdraw to an invalid address" %
+                    from_id
+                )
+                return
+
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id,
+                "I'm sorry, something went wrong with the address validation for " +
+                to_address)
+            print(
+                from_id + " tried to withdraw but something went wrong " + str(err)
+            )
+            return
+
+        try:
+            from_address = get_address(from_id)
+            balance = get_balance(
+                from_address,
+                settings["coin"]["min_confirmations"]
+            )
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id,
+                "I'm sorry I could not get your balance"
+            )
+            return
+
+        if balance < MIN_WITHDRAW + MINER_FEE:
+            short = MIN_WITHDRAW + MINER_FEE - balance
+            post_comment(id,
+                "I'm sorry, the minimum withdrawal amount is " +
+                amount_to_string(MIN_WITHDRAW) +
+                " $" +
+                settings["coin"]["short_name"] +
+                " you are short " +
+                amount_to_string(short) +
+                " $" +
+                settings["coin"]["short_name"])
+            print(
+                from_id +
+                " tried to withdraw " +
+                amount_to_string(balance) +
+                ", but min is set to " +
+                amount_to_string(MIN_WITHDRAW)
+            )
+            return
+
+        if balance < MIN_WITHDRAW + MINER_FEE:
+            short = MIN_WITHDRAW + MINER_FEE - balance
+            post_comment(id,
+                "I'm sorry, you dont have enough funds to cover the miner fee (you are short " +
+                amount_to_string(short) +
+                " $" +
+                settings["coin"]["short_name"] +
+                ")")
+            print(
+                from_id +
+                " tried to withdraw " +
+                amount_to_string(balance) +
+                ", but funds don't cover the miner fee " +
+                amount_to_string(MINER_FEE)
+            )
+            return
+
+        try:
+            amount = balance - MINER_FEE
+            json_rpc_fetch("sendTransaction", {
+                'from': from_address,
+                'to': to_address,
+                'value': amount,
+                'fee': MINER_FEE
+            })
+            post_comment(id,
+                amount_to_string(amount) +
+                " $" +
+                settings["coin"]["short_name"] +
+                " has been withdrawn from your account to " +
+                to_address)
+            print(
+                "Sending " +
+                amount_to_string(amount) +
+                " " +
+                settings["coin"]["full_name"] +
+                " to " +
+                to_address +
+                " for " +
+                from_id
+            )
+
+        except Exception as err:
+            email_notification(dump_error(err))
+            post_comment(id,
+                "Could not send coins to " + to_address)
+            print("Error in !withdraw command" + str(err))
 
     elif command == "send":
         print(command)
