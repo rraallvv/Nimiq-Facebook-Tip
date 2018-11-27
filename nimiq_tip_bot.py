@@ -26,8 +26,9 @@ PAGE_LONG_LIVED_ACCESS_TOKEN = os.environ['PAGE_LONG_LIVED_ACCESS_TOKEN']
 PAGE_ID = os.environ['PAGE_ID']
 POST_ID_TO_MONITOR = os.environ['POST_ID_TO_MONITOR']
 
-MYSQL_USER = os.environ['MYSQL_USER']
-MYSQL_PASSWORD = os.environ['MYSQL_PASSWORD']
+DATABASE_HOST = os.environ['DATABASE_HOST']
+DATABASE_USER = os.environ['DATABASE_USER']
+DATABASE_PASS = os.environ['DATABASE_PASS']
 
 NIMIQ_RPC_USER = os.environ['NIMIQ_RPC_USER']
 NIMIQ_RPC_PASS = os.environ['NIMIQ_RPC_PASS']
@@ -677,7 +678,7 @@ def dump_error(err):
 class Posts:
     def __init__(self):
         self.connection = mysql.connector.connect(
-            host='localhost', database='facebook_tip_bot', user=MYSQL_USER, password=MYSQL_PASSWORD)
+            host=DATABASE_HOST, database='facebook_tip_bot', user=DATABASE_USER, password=DATABASE_PASS)
         self.cursor = self.connection.cursor()
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS comments (id TEXT NOT NULL, PRIMARY KEY (id(128)))")
@@ -702,7 +703,7 @@ class Posts:
 class Addresses:
     def __init__(self):
         self.connection = mysql.connector.connect(
-            host='localhost', database='facebook_tip_bot', user=MYSQL_USER, password=MYSQL_PASSWORD)
+            host=DATABASE_HOST, database='facebook_tip_bot', user=DATABASE_USER, password=DATABASE_PASS)
         self.cursor = self.connection.cursor()
         self.cursor.execute(
             "CREATE TABLE IF NOT EXISTS addresses (id TEXT NOT NULL, address VARCHAR(44) NOT NULL, PRIMARY KEY (id(128)))")

@@ -1,6 +1,3 @@
-log:
-  file: twitter.log
-  level: "info"
 rpc:
   host: localhost
   port: 8648

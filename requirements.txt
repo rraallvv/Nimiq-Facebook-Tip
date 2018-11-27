@@ -1,2 +1,4 @@
-facebook-sdk==2.0.0
-Pillow==4.2.1
+facebook-sdk==3.1.0
+mysql-connector-python-rf==2.2.2
+lxml==4.2.5
+PyYAML==3.13
