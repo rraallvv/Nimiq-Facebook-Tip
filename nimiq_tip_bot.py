@@ -19,9 +19,29 @@ import yaml
 import re
 import traceback
 from random import randint
+from flask import Flask, request
+
+# check if the config file exists
+if not os.path.isfile("./settings.yml"):
+    print(
+        "Configuration file doesn't exist! Please read the README.md file first."
+    )
+    sys.exit(1)
+
+# load settings
+with open('./settings.yml', 'r') as infile:
+    settings = yaml.safe_load(infile)
+
+MINER_FEE = int(round(settings["coin"]["miner_fee"]
+                      * settings["coin"]["inv_precision"]))
+MIN_WITHDRAW = int(round(settings["coin"]["min_withdraw"] *
+                         settings["coin"]["inv_precision"]))
+MIN_TIP = int(round(settings["coin"]["min_tip"]
+                    * settings["coin"]["inv_precision"]))
 
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
+APP_VERIFY_TOKEN = os.environ['APP_VERIFY_TOKEN']
 PAGE_LONG_LIVED_ACCESS_TOKEN = os.environ['PAGE_LONG_LIVED_ACCESS_TOKEN']
 PAGE_ID = os.environ['PAGE_ID']
 POST_ID_TO_MONITOR = os.environ['POST_ID_TO_MONITOR']
@@ -117,7 +137,7 @@ def post_comment(id, message):
                      message=message + " " + tag)
 
 
-def comment_response(graph, comment):
+def process_comment(graph, comment):
     id = comment['id']
 
     full_message = comment['message']
@@ -603,7 +623,7 @@ def check_comments(graph, id, type):
 
     # process commands in queue in chronological order (oldest first)
     for comment in reversed(queue):
-        comment_response(graph, comment)
+        process_comment(graph, comment)
 
         # add it to the database, so we don't comment on it again
         Posts().add(comment['id'])
@@ -732,24 +752,6 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
-# check if the config file exists
-if not os.path.isfile("./settings.yml"):
-    print(
-        "Configuration file doesn't exist! Please read the README.md file first."
-    )
-    sys.exit(1)
-
-# load settings
-with open('./settings.yml', 'r') as infile:
-    settings = yaml.safe_load(infile)
-
-MINER_FEE = int(round(settings["coin"]["miner_fee"]
-                      * settings["coin"]["inv_precision"]))
-MIN_WITHDRAW = int(round(settings["coin"]["min_withdraw"] *
-                         settings["coin"]["inv_precision"]))
-MIN_TIP = int(round(settings["coin"]["min_tip"]
-                    * settings["coin"]["inv_precision"]))
-
 # connect to coin daemon
 print("Connecting to " + settings["coin"]["full_name"] + " RPC API...")
 
@@ -785,13 +787,132 @@ signal.signal(signal.SIGINT, signal_handler)
 # create api graph
 graph = facebook.GraphAPI(PAGE_LONG_LIVED_ACCESS_TOKEN)
 
-# facebook doesn't notify when comments are recived so we have to pull that data constantly
-print('Started monitoring facebook comments...')
-while True:
-    sleep(5)
+# start app to handle webhook
+app = Flask(__name__)
 
-    # check mentions
-    check_comments(graph, PAGE_ID, 'tagged')
 
-    # check comments on page post
-    check_comments(graph, '%s_%s' % (PAGE_ID, POST_ID_TO_MONITOR), 'comments')
+@app.route('/', methods=['GET'])
+def handle_verification():
+    '''
+    Verifies facebook webhook subscription
+    Successful when verify_token is same as token sent by facebook app
+    '''
+    if (request.args.get('hub.verify_token', '') == APP_VERIFY_TOKEN):
+        print("succefully verified")
+        return request.args.get('hub.challenge', '')
+    else:
+        print("Wrong verification token!")
+        return "Wrong validation token"
+
+
+@app.route('/', methods=['POST'])
+def handle_message():
+    '''
+    Handle messages sent by facebook messenger to the applicaiton
+    '''
+    data = request.get_json()
+
+    print(data)
+    return "ok"
+
+    '''
+    if data["object"] == "page":
+        # check mentions
+        check_comments(graph, PAGE_ID, 'tagged')
+
+        # check comments on page post
+        check_comments(graph, '%s_%s' %
+                       (PAGE_ID, POST_ID_TO_MONITOR), 'comments')
+
+        for entry in data["entry"]:
+            for messaging_event in entry["messaging"]:
+                if messaging_event.get("message"):
+
+                    sender_id = messaging_event["sender"]["id"]
+                    recipient_id = messaging_event["recipient"]["id"]
+                    message_text = messaging_event["message"]["text"]
+                    send_message_response(
+                        sender_id, parse_user_message(message_text))
+
+{
+  "field": "mention",
+  "value": {
+    "post_id": "44444444_444444444",
+    "sender_name": "Example Name",
+    "item": "post",
+    "sender_id": "44444444",
+    "verb": "add"
+  }
+}
+
+{
+  "entry":[
+    {
+      "changes":[
+        {
+          "field":"mention",
+          "value":{
+            "sender_name":"Example Name",
+            "post_id":"44444444_444444444",
+            "verb":"add",
+            "sender_id":"44444444",
+            "item":"post"
+          }
+        }
+      ],
+      "id":"0",
+      "time":1543608880
+    }
+  ],
+  "object":"page"
+}
+
+{
+  "field": "feed",
+  "value": {
+    "item": "status",
+    "post_id": "44444444_444444444",
+    "verb": "add",
+    "published": 1,
+    "created_time": 1543608367,
+    "message": "Example post content.",
+    "from": {
+      "name": "Test Page",
+      "id": "1067280970047460"
+    }
+  }
+}
+
+{
+  "entry":[
+    {
+      "changes":[
+        {
+          "field":"feed",
+          "value":{
+            "from":{
+              "name":"Test Page",
+              "id":"1067280970047460"
+            },
+            "item":"status",
+            "post_id":"44444444_444444444",
+            "verb":"add",
+            "published":1,
+            "created_time":1543608842,
+            "message":"Example post content."
+          }
+        }
+      ],
+      "id":"0",
+      "time":1543608843
+    }
+  ],
+  "object":"page"
+}
+    '''
+
+    return "ok"
+
+
+if __name__ == "__main__":
+    app.run(host='localhost', port=7000)
