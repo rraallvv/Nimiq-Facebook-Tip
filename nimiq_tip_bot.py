@@ -20,6 +20,10 @@ import re
 import traceback
 from random import randint
 from flask import Flask, request
+from dotenv import load_dotenv
+
+# automatically search and load the enviroment variables in .env
+load_dotenv()
 
 # check if the config file exists
 if not os.path.isfile("./settings.yml"):

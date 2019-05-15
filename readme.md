@@ -30,14 +30,14 @@ Basic coin settings.
 * **random_length** - Number of decimals of the random number in the random stamp
 
 # Environment variables
-The following environment variables are needed for Nimiq-Facebook-Tip to work. On Unix compatible systems those can be added to the file `~/.bashrc`, `~/.profile`, or `~/.bash_profile`.
+The following environment variables are needed for Nimiq-Facebook-Tip to work. On Unix compatible systems those can be added to the files `./.env`, `~/.bashrc`, `~/.profile` or `~/.bash_profile`.
 ```
 # Facebook app
-export APP_ID=<app id>
-export APP_SECRET=<app secret>
-export PAGE_LONG_LIVED_ACCESS_TOKEN=<access token>
-export PAGE_ID=<app page>
-export POST_ID_TO_MONITOR=<post when tips are posted>
+export APP_ID=<Facebook app id>
+export APP_SECRET=<Facebook app secret>
+export PAGE_LONG_LIVED_ACCESS_TOKEN=<Facebook page access token>
+export PAGE_ID=<Facebook page id>
+export POST_ID_TO_MONITOR=<post id on Facebook where all tips will be posted>
 # Nimiq jsonrpc client
 export NIMIQ_RPC_USER=<nimiq jsonrpc user>
 export NIMIQ_RPC_PASS=<nimiq jsonrpc password>
