@@ -33,27 +33,28 @@ Basic coin settings.
 The following environment variables are needed for Nimiq-Facebook-Tip to work. On Unix compatible systems those can be added to the files `./.env`, `~/.bashrc`, `~/.profile` or `~/.bash_profile`.
 ```
 # Facebook app
-export APP_ID=<Facebook app id>
-export APP_SECRET=<Facebook app secret>
-export PAGE_LONG_LIVED_ACCESS_TOKEN=<Facebook page access token>
-export PAGE_ID=<Facebook page id>
-export POST_ID_TO_MONITOR=<post id on Facebook where all tips will be posted>
+APP_ID=<Facebook app id>
+APP_SECRET=<Facebook app secret>
+APP_VERIFY_TOKEN=<Facebook app verification token>
+PAGE_LONG_LIVED_ACCESS_TOKEN=<Facebook page access token>
+PAGE_ID=<Facebook page id>
+POST_ID_TO_MONITOR=<post id on Facebook where all tips will be posted>
 # Nimiq jsonrpc client
-export NIMIQ_RPC_USER=<nimiq jsonrpc user>
-export NIMIQ_RPC_PASS=<nimiq jsonrpc password>
-export NIMIQ_RPC_HOST=<server address>
-export NIMIQ_RPC_PORT=<server port>
+NIMIQ_RPC_USER=<nimiq jsonrpc user>
+NIMIQ_RPC_PASS=<nimiq jsonrpc password>
+NIMIQ_RPC_HOST=<server address>
+NIMIQ_RPC_PORT=<server port>
 # Database
-export DATABASE_HOST=<server address>
-export DATABASE_USER=<database user>
-export DATABASE_PASS=<database password>
+DATABASE_HOST=<server address>
+DATABASE_USER=<database user>
+DATABASE_PASS=<database password>
 # Email notifications
-export GMAIL_ADDRESS=<sender email>
-export OAUTH_CLIENT_ID=<gmail API client id>
-export OAUTH_CLIENT_SECRET=<gmail API secret id>
-export OAUTH_REFRESH_TOKEN=<gmail API refresh token>
-export OAUTH_ACCESS_TOKEN=<gmail API access token>
-export EMAIL_NOTIFICATION_ADDRESS=<recipient email>
+GMAIL_ADDRESS=<sender email>
+OAUTH_CLIENT_ID=<gmail API client id>
+OAUTH_CLIENT_SECRET=<gmail API secret id>
+OAUTH_REFRESH_TOKEN=<gmail API refresh token>
+OAUTH_ACCESS_TOKEN=<gmail API access token>
+EMAIL_NOTIFICATION_ADDRESS=<recipient email>
 ```
 
 # How does it work?
