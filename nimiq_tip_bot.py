@@ -134,7 +134,7 @@ def post_comment(id, message):
     d = settings["coin"]["random_length"]
     n = 10 ** d - 1
     r = ("0.%0" + str(d) + "d") % randint(0, n)
-    tag = "[" + settings["coin"]["random_prefix"] + r + "]"
+    tag = "[" + settings["coin"]["random_suffix"] + r + "]"
 
     # post message with random tag at the end
     graph.put_object(parent_object=id, connection_name='comments',
@@ -817,7 +817,6 @@ def handle_message():
     data = request.get_json()
 
     print(data)
-    return "ok"
 
     '''
     if data["object"] == "page":
@@ -837,7 +836,15 @@ def handle_message():
                     message_text = messaging_event["message"]["text"]
                     send_message_response(
                         sender_id, parse_user_message(message_text))
+    '''
 
+    return "ok"
+
+
+if __name__ == "__main__":
+    app.run(host='localhost', port=7000)
+
+'''
 {
   "field": "mention",
   "value": {
@@ -913,10 +920,4 @@ def handle_message():
   ],
   "object":"page"
 }
-    '''
-
-    return "ok"
-
-
-if __name__ == "__main__":
-    app.run(host='localhost', port=7000)
+'''

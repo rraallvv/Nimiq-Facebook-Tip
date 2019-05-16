@@ -1,6 +1,3 @@
-rpc:
-  host: localhost
-  port: 8648
 coin:
   min_withdraw: 1
   min_confirmations: 3
@@ -10,5 +7,5 @@ coin:
   inv_precision: 100000
   miner_fee: 0.00140
   address_pattern: "\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}[ _\\-\\+]?\\S{4}"
-  random_prefix: "\U0001F916 "
+  random_suffix: "\u1F916"
   random_length: 3

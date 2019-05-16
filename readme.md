@@ -11,11 +11,6 @@ $ pip install -r requirements.txt
 # Configuration file
 After installation proceed to the configuration file `settings.yml`.
 
-## rpc
-JSON RPC API connection info.
-* **host** - Daemon hostname (`localhost` if hosted on the same machine)
-* **port** - Daemon RPC port (by default `8648` for Nimiq)
-
 ## coin
 Basic coin settings.
 * **min_withdraw** - Minimum amount of coins to withdraw
@@ -26,7 +21,7 @@ Basic coin settings.
 * **inv_precision** - Inverse of the smalest amount (e.g. 1/0.00001 or 1e5 for Nimiq)
 * **miner_fee** - Fee charged on transactions to cover up the miner fees.
 * **address_pattern** - The regex pattern to match in the comment when searching for the address to send/withdraw
-* **random_prefix** - Prefix added to the random stamp (used to fool Facebook into thinking each comment is different) 
+* **random_suffix** - Suffix added to the random stamp (used to fool Facebook into thinking each comment is different) 
 * **random_length** - Number of decimals of the random number in the random stamp
 
 # Environment variables
